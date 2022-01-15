@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter_wheather_bloc_basic/core/themes/app_theme.dart';
-import 'package:flutter_wheather_bloc_basic/data/repositories/weather_repository.dart';
+import 'package:flutter_wheather_bloc_basic/data/models/weather.dart';
+import 'package:flutter_wheather_bloc_basic/logic/cubit/weather_cubit.dart';
 import 'package:flutter_wheather_bloc_basic/presentation/router/app_router.dart';
-import 'package:flutter_wheather_bloc_basic/presentation/screens/location_screen/location_screen.dart';
 
 class LoadingScreen extends StatefulWidget {
   @override
@@ -11,44 +13,61 @@ class LoadingScreen extends StatefulWidget {
 }
 
 class _LoadingScreenState extends State<LoadingScreen> {
+  final weatherCubit = WeatherCubit();
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    getLocationData();
-  }
-
-  void getLocationData() async {
-    WeatherRepository weatherRepository = WeatherRepository();
-    print('tandq getting location...');
-    var weatherData = await weatherRepository.getLocationWeather();
-    print('tandq getting location done');
-    Navigator.pushNamed(context, AppRouter.location, arguments: weatherData);
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (context) => LocationScreen(),
-    //   ),
-    // );
+    //weatherCubit.loading(); //loading from init
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      home: Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SpinKitCircle(
-                color: Colors.blue,
-                size: 100.0,
-              ),
-              SizedBox(height: 20.0),
-              Text('Location is loading...'),
-            ],
+    return BlocProvider<WeatherCubit>(
+      create: (context) => weatherCubit,
+      child: MaterialApp(
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        home: Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(height: 20.0),
+                Builder(
+                  builder: (context) {
+                    return FloatingActionButton(
+                      onPressed: () {
+                        BlocProvider.of<WeatherCubit>(context).loading();
+                      },
+                      child: Text('Go'),
+                    );
+                  },
+                ),
+                SizedBox(height: 20.0),
+                BlocBuilder<WeatherCubit, WeatherState>(
+                  builder: (builderContext, state) {
+                    print('tandq BlocBuilder work');
+                    if (state is WeatherInitial) {
+                      return Text('Clock go button to get weather');
+                    } else if (state is WeatherLoading) {
+                      return SpinKitCircle(
+                        color: Colors.blue,
+                        size: 100.0,
+                      );
+                    } else if (state is WeatherLoaded) {
+                      Weather weather = (state as WeatherLoaded).weatherCubit;
+                      SchedulerBinding.instance!.addPostFrameCallback((_) {
+                        Navigator.pushNamed(context, AppRouter.location,
+                            arguments: weather);
+                      });
+                      return const Text('loaded');
+                    }
+                    return const Text('Error');
+                  },
+                )
+              ],
+            ),
           ),
         ),
       ),

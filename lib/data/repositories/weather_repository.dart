@@ -1,4 +1,4 @@
-import 'package:flutter_wheather_bloc_basic/data/data_providers/weather_api.dart';
+import 'package:flutter_wheather_bloc_basic/data/dataproviders/weather_api.dart';
 import 'package:flutter_wheather_bloc_basic/data/models/weather.dart';
 import 'package:flutter_wheather_bloc_basic/data/services/location.dart';
 
